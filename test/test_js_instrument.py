@@ -1,4 +1,5 @@
-from ..automation.utilities import db_utils
+from openwpm.utilities import db_utils
+
 from . import utilities as util
 from .openwpm_jstest import OpenWPMJSTest
 
@@ -100,10 +101,10 @@ class TestJSInstrumentByPython(OpenWPMJSTest):  # noqa
 
     def get_config(self, data_dir=""):
         manager_params, browser_params = super().get_config(data_dir)
-        browser_params[0]["prefs"] = {
+        browser_params[0].prefs = {
             "network.dns.localDomains": "example.com,example.org"
         }
-        browser_params[0]["js_instrument_settings"] = [
+        browser_params[0].js_instrument_settings = [
             # Note that the string "window.document.cookie" does not work.
             {
                 "window.document": [

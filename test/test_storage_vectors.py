@@ -1,5 +1,6 @@
-from ..automation import CommandSequence, TaskManager
-from ..automation.utilities import db_utils
+from openwpm import command_sequence, task_manager
+from openwpm.utilities import db_utils
+
 from . import utilities
 from .openwpmtest import OpenWPMTest
 
@@ -34,16 +35,16 @@ class TestStorageVectors(OpenWPMTest):
         """ Check that profile cookies set by JS are saved """
         # Run the test crawl
         manager_params, browser_params = self.get_config()
-        browser_params[0]["cookie_instrument"] = True
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        browser_params[0].cookie_instrument = True
+        manager = task_manager.TaskManager(manager_params, browser_params)
         url = utilities.BASE_TEST_URL + "/js_cookie.html"
-        cs = CommandSequence.CommandSequence(url)
+        cs = command_sequence.CommandSequence(url)
         cs.get(sleep=3, timeout=120)
         manager.execute_command_sequence(cs)
         manager.close()
         # Check that the JS cookie we stored is recorded
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             (
                 "SELECT visit_id, record_type, change_cause, is_http_only, "
                 "is_host_only, is_session, host, is_secure, name, path, "

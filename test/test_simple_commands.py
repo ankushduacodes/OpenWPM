@@ -7,8 +7,9 @@ from urllib.parse import urlparse
 
 from PIL import Image
 
-from ..automation import CommandSequence, TaskManager
-from ..automation.utilities import db_utils
+from openwpm import command_sequence, task_manager
+from openwpm.utilities import db_utils
+
 from . import utilities
 from .openwpmtest import OpenWPMTest
 
@@ -105,19 +106,19 @@ class TestSimpleCommands(OpenWPMTest):
 
     def get_config(self, display_mode):
         manager_params, browser_params = self.get_test_config(display_mode=display_mode)
-        browser_params[0]["http_instrument"] = True
+        browser_params[0].http_instrument = True
         return manager_params, browser_params
 
     def test_get_site_visits_table_valid(self, display_mode):
         """Check that get works and populates db correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential get commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a)
+        cs_a = command_sequence.CommandSequence(url_a)
         cs_a.get(sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b)
+        cs_b = command_sequence.CommandSequence(url_b)
         cs_b.get(sleep=1)
 
         # Perform the get commands
@@ -126,7 +127,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(
-            manager_params["db"], "SELECT site_url FROM site_visits"
+            manager_params.database_name, "SELECT site_url FROM site_visits"
         )
 
         # We had two separate page visits
@@ -139,12 +140,12 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that get works and populates http tables correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential get commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a)
+        cs_a = command_sequence.CommandSequence(url_a)
         cs_a.get(sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b)
+        cs_b = command_sequence.CommandSequence(url_b)
         cs_b.get(sleep=1)
 
         manager.execute_command_sequence(cs_a)
@@ -152,7 +153,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(
-            manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+            manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
         )
 
         # Construct dict mapping site_url to visit_id
@@ -161,28 +162,28 @@ class TestSimpleCommands(OpenWPMTest):
             visit_ids[row[1]] = row[0]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_requests" " WHERE url = ?",
             (url_a,),
         )
         assert qry_res[0][0] == visit_ids[url_a]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_requests" " WHERE url = ?",
             (url_b,),
         )
         assert qry_res[0][0] == visit_ids[url_b]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_a,),
         )
         assert qry_res[0][0] == visit_ids[url_a]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_b,),
         )
@@ -192,12 +193,12 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that CommandSequence.browse() populates db correctly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a, site_rank=0)
+        cs_a = command_sequence.CommandSequence(url_a, site_rank=0)
         cs_a.browse(num_links=1, sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b, site_rank=1)
+        cs_b = command_sequence.CommandSequence(url_b, site_rank=1)
         cs_b.browse(num_links=1, sleep=1)
 
         manager.execute_command_sequence(cs_a)
@@ -205,7 +206,8 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(
-            manager_params["db"], "SELECT site_url, site_rank" " FROM site_visits"
+            manager_params.database_name,
+            "SELECT site_url, site_rank" " FROM site_visits",
         )
 
         # We had two separate page visits
@@ -225,12 +227,12 @@ class TestSimpleCommands(OpenWPMTest):
         """
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
-        cs_a = CommandSequence.CommandSequence(url_a)
+        cs_a = command_sequence.CommandSequence(url_a)
         cs_a.browse(num_links=20, sleep=1)
-        cs_b = CommandSequence.CommandSequence(url_b)
+        cs_b = command_sequence.CommandSequence(url_b)
         cs_b.browse(num_links=1, sleep=1)
 
         manager.execute_command_sequence(cs_a)
@@ -238,7 +240,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(
-            manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+            manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
         )
 
         # Construct dict mapping site_url to visit_id
@@ -247,28 +249,28 @@ class TestSimpleCommands(OpenWPMTest):
             visit_ids[row[1]] = row[0]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_requests" " WHERE url = ?",
             (url_a,),
         )
         assert qry_res[0][0] == visit_ids[url_a]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_requests" " WHERE url = ?",
             (url_b,),
         )
         assert qry_res[0][0] == visit_ids[url_b]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_a,),
         )
         assert qry_res[0][0] == visit_ids[url_a]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_b,),
         )
@@ -282,13 +284,13 @@ class TestSimpleCommands(OpenWPMTest):
         # 5) A link to example.com?localtest.me
         # We should see page visits for 1 and 2, but not 3-5.
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_c,),
         )
         assert qry_res[0][0] == visit_ids[url_a]
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_d,),
         )
@@ -296,7 +298,7 @@ class TestSimpleCommands(OpenWPMTest):
 
         # We expect 4 urls: a,c,d and a favicon request
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT COUNT(DISTINCT url) FROM http_responses" " WHERE visit_id = ?",
             (visit_ids[url_a],),
         )
@@ -312,7 +314,7 @@ class TestSimpleCommands(OpenWPMTest):
         """
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
+        manager = task_manager.TaskManager(manager_params, browser_params)
 
         # Set up two sequential browse commands to two URLS
         manager.browse(url_a, num_links=20, sleep=1)
@@ -320,7 +322,7 @@ class TestSimpleCommands(OpenWPMTest):
         manager.close()
 
         qry_res = db_utils.query_db(
-            manager_params["db"], "SELECT visit_id, site_url FROM site_visits"
+            manager_params.database_name, "SELECT visit_id, site_url FROM site_visits"
         )
 
         # Construct dict mapping site_url to visit_id
@@ -329,28 +331,28 @@ class TestSimpleCommands(OpenWPMTest):
             visit_ids[row[1]] = row[0]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_requests" " WHERE url = ?",
             (url_a,),
         )
         assert qry_res[0][0] == visit_ids[url_a]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_requests" " WHERE url = ?",
             (url_b,),
         )
         assert qry_res[0][0] == visit_ids[url_b]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_a,),
         )
         assert qry_res[0][0] == visit_ids[url_a]
 
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_b,),
         )
@@ -364,13 +366,13 @@ class TestSimpleCommands(OpenWPMTest):
         # 5) A link to example.com?localtest.me
         # We should see page visits for 1 and 2, but not 3-5.
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_c,),
         )
         assert qry_res[0][0] == visit_ids[url_a]
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT visit_id FROM http_responses" " WHERE url = ?",
             (url_d,),
         )
@@ -378,7 +380,7 @@ class TestSimpleCommands(OpenWPMTest):
 
         # We expect 4 urls: a,c,d and a favicon request
         qry_res = db_utils.query_db(
-            manager_params["db"],
+            manager_params.database_name,
             "SELECT COUNT(DISTINCT url) FROM http_responses" " WHERE visit_id = ?",
             (visit_ids[url_a],),
         )
@@ -388,8 +390,8 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that 'save_screenshot' works"""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        cs = CommandSequence.CommandSequence(url_a)
+        manager = task_manager.TaskManager(manager_params, browser_params)
+        cs = command_sequence.CommandSequence(url_a)
         cs.get(sleep=1)
         cs.save_screenshot("test")
         cs.screenshot_full_page("test_full")
@@ -416,8 +418,8 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that 'dump_page_source' works and source is saved properly."""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        cs = CommandSequence.CommandSequence(url_a)
+        manager = task_manager.TaskManager(manager_params, browser_params)
+        cs = command_sequence.CommandSequence(url_a)
         cs.get(sleep=1)
         cs.dump_page_source(suffix="test")
         manager.execute_command_sequence(cs)
@@ -439,8 +441,8 @@ class TestSimpleCommands(OpenWPMTest):
         """Check that 'recursive_dump_page_source' works"""
         # Run the test crawl
         manager_params, browser_params = self.get_config(display_mode)
-        manager = TaskManager.TaskManager(manager_params, browser_params)
-        cs = CommandSequence.CommandSequence(NESTED_FRAMES_URL)
+        manager = task_manager.TaskManager(manager_params, browser_params)
+        cs = command_sequence.CommandSequence(NESTED_FRAMES_URL)
         cs.get(sleep=1)
         cs.recursive_dump_page_source()
         manager.execute_command_sequence(cs)
